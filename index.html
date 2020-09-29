@@ -15,34 +15,70 @@
         <input type="text" placeholder="quantity" name="quantity">
         <button type="submit">Add Product</button>
     </form>
-    <div id="products">
-
-    </div>
+    <div id="products"></div>
+    <div id="update"></div>
     <script>
-        function loadProducts() {
+        function loadAllProducts() {
             fetch('/products')
                 .then(res => res.json())
                 .then(products => {
-                    console.log(products);
                     const container = document.getElementById('products');
-                    console.log(container);
+                    container.innerHTML = '';
                     products.forEach(pd => {
                         const p = document.createElement('p');
                         p.innerHTML = `<strong>${pd.name}</strong> -- price: ${pd.price} quantity: ${pd.quantity}
-                <button onclick="deleteProduct('${pd._id}')">Delete</button>`;
+                        <button onclick="loadProduct('${pd._id}')">Update</button>
+                        <button onclick="deleteProduct(event, '${pd._id}')">Delete</button>
+                        `;
                         container.appendChild(p);
-                    })
+                    });
                 })
         }
-        loadProducts();
+        loadAllProducts();
 
-        function deleteProduct(id){
+        function loadProduct(id){
+            fetch( `product/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                const update = document.getElementById('update')
+                update.innerHTML = `
+                <h3>Update: ${data._id} </h3>
+                Price: <input type="text" value="${data.price}" id="price">
+                <br>
+                Quantity: <input type="text" value="${data.quantity}" id="quantity">
+                <br>
+                <button onclick="updateProduct('${data._id}')">submit</button>
+                `;
+            })
+        }
+
+        function updateProduct(id){
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+            const product = {id, price, quantity};
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(product)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result){
+                    loadAllProducts();
+                    document.getElementById('update').innerHTML = '';
+                }
+            })
+        }
+
+        function deleteProduct(event, id){
             fetch(`/delete/${id}`, {
                 method: 'DELETE'
                 })
                 .then(res => res.json())
                 .then(result => {
-                    console.log('deleted successfully')
+                    if(result){
+                        event.target.parentNode.style.display = 'none';
+                    }
                 })
 
         }
